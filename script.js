@@ -1,3 +1,5 @@
+const flipCards = document.querySelectorAll('.flip-card'); 
+let currentCardIndex = 0;
 const words = [
     { word: "apple", translation: "яблоко", example: "I eat an apple." },
     { word: "banana", translation: "банан", example: "She likes banana." },
@@ -7,133 +9,153 @@ const words = [
     { word: "pineapple", translation: "ананас", example: "Pineapple is very healthy."}
 ];
 
-let currentIndex = 0;
-let examMode = false;
-let selectedCards = [];
-let correctCount = 0;
+const backButton = document.querySelector('#back');
+const nextButton = document.querySelector('#next');
+const cardFront = document.querySelector('#card-front h1');
+const cardBack = document.querySelector('#card-back h1'); 
+const cardBackExample = document.querySelector('#card-back span'); 
 
-function updateWord() {
-    const currentWordElement = document.querySelector('#card-front h1');
-    const currentBackElement = document.querySelector('#card-back h1');
-    const currentExampleElement = document.querySelector('#card-back span');
-    const totalWordElement = document.querySelector('#total-word');
+function updateActiveCard() {
+    const activeCard = words[currentCardIndex];
+    cardFront.textContent = activeCard.word;
+    cardBack.textContent = activeCard.translation;
+    cardBackExample.textContent = activeCard.example;
+    backButton.disabled = currentCardIndex === 0;
+    nextButton.disabled = currentCardIndex === words.length - 1;
 
-    currentWordElement.innerText = words[currentIndex].word;
-    currentBackElement.innerText = words[currentIndex].translation;
-    currentExampleElement.innerText = words[currentIndex].example;
-
-    document.querySelector('#current-word').innerText = currentIndex + 1;
-    totalWordElement.innerText = words.length;
-
-    document.getElementById('back').disabled = currentIndex === 0;
-    document.getElementById('next').disabled = currentIndex === words.length - 1;
+    const currentWordElement = document.querySelector('#current-word');
+    currentWordElement.textContent = `${currentCardIndex + 1}`;
 }
 
-document.querySelector('.flip-card').addEventListener('click', () => {
-    document.querySelector('.flip-card').classList.toggle('active');
+flipCards.forEach((card) => {
+    card.addEventListener('click', () => {
+        card.classList.toggle('active');
+    });
 });
 
-document.getElementById('next').addEventListener('click', () => {
-    if (currentIndex < words.length - 1) {
-        currentIndex++;
-        updateWord();
+backButton.addEventListener('click', () => {
+    if (currentCardIndex > 0) {
+        currentCardIndex--; 
+        updateActiveCard();
     }
 });
 
-document.getElementById('back').addEventListener('click', () => {
-    if (currentIndex > 0) {
-        currentIndex--;
-        updateWord();
+nextButton.addEventListener('click', () => {
+    if (currentCardIndex < words.length - 1) {
+        currentCardIndex++; 
+        updateActiveCard();
     }
 });
 
-document.getElementById('exam').addEventListener('click', startExam);
+updateActiveCard();
+
+const examButton = document.querySelector('#exam');
+const sliderCard = document.querySelector('.slider');
+const timerElements = document.querySelector('#timer'); 
+let timerInterval; 
+let elapsedTime = 0; 
+
+examButton.addEventListener('click', startExam);
+
 
 function startExam() {
-    examMode = true;
-    document.querySelector('#study-mode').classList.add('hidden');
-    document.querySelector('#exam-mode').classList.remove('hidden');
-    document.querySelector('#exam-cards').innerHTML = '';
+    const studyModeElement = document.querySelector('#study-mode');
+    const examModeElement = document.querySelector('#exam-mode');
+    const contentElement = document.querySelector('#exam-cards');
 
-    const shuffledWords = words.sort(() => Math.random() - 0.5);
-    shuffledWords.forEach(word => {
-        const card = document.createElement('div');
-        card.classList.add('flip-card');
-        card.innerHTML = `
-            <div class="flip-card-inner" data-translation="${word.translation}">
-                <div class="flip-card-front"><h1>${word.word}</h1></div>
-                <div class="flip-card-back"><h1>${word.translation}</h1><p><b>Пример:</b> <span>${word.example}</span></p></div>
-            </div>
-        `;
-        document.querySelector('#exam-cards').appendChild(card);
+    studyModeElement.classList.add('hidden');
+    examModeElement.classList.remove('hidden');
+    backButton.classList.add('hidden');
+    nextButton.classList.add('hidden');
+    examButton.classList.add('hidden');
+    sliderCard.classList.add('hidden');
+     elapsedTime = 0;
+     timerElements.innerText = '00:00';
+     timerInterval = setInterval(updateTimer, 1000);
+
+    const randomCards = [...words];
+    randomCards.sort(() => Math.random() - 0.5);
+
+    const fragment = document.createDocumentFragment();
+
+    randomCards.forEach((card) => {
+        const cardWordElement = createCardElement(card.translation, card.word);
+        const cardTranslateElement = createCardElement(card.word, card.translation);
+        fragment.append(cardWordElement);
+        fragment.append(cardTranslateElement);
     });
+    contentElement.append(fragment);
 
-    startSelection();
+function updateTimer() {
+    elapsedTime++;
+    const minutes = Math.floor(elapsedTime / 60);
+    const seconds = elapsedTime % 60;
+    timerElements.innerText = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 }
 
-function startSelection() {
-    const examCards = document.querySelectorAll('#exam-cards .flip-card');
-    examCards.forEach(card => {
-        card.addEventListener('click', () => selectCard(card));
-    });
-}
+function createCardElement(word, translation) {
+    const cardElement = document.createElement('div');
+    cardElement.classList.add('card');
 
-function selectCard(card) {
-    if (selectedCards.length < 2) {
-        const flipCardInner = card.querySelector('.flip-card-inner');
-        flipCardInner.classList.toggle('active'); 
-        selectedCards.push(card);
+    const wordElement = document.createElement('div');
+    wordElement.classList.add('card-word');
+    wordElement.textContent = word;
 
-        if (selectedCards.length === 2) {
-            checkPair();
+    const translationElement = document.createElement('div');
+    translationElement.classList.add('card-translation');
+    translationElement.textContent = translation;
+
+    cardElement.append(wordElement);
+    cardElement.append(translationElement);
+    translationElement.classList.add('hidden');
+
+    const contentElement = document.querySelector('#exam-cards');
+    let firstClickedCard = null;
+    let correctAnswersCount = 0;
+
+    contentElement.addEventListener('click', function(event) {
+        const cardElement = event.target.closest('.card');
+
+        if (cardElement) {
+            if (firstClickedCard === null) {
+                firstClickedCard = cardElement;
+                firstClickedCard.classList.add('correct');
+            } else {
+                const firstCardWord = firstClickedCard.querySelector('.card-word').textContent;
+                const secondCardWord = cardElement.querySelector('.card-word').textContent;
+                const firstCardTranslation = firstClickedCard.querySelector('.card-translation').textContent;
+                const secondCardTranslation = cardElement.querySelector('.card-translation').textContent;
+
+                if (
+                    (firstCardWord === secondCardTranslation && firstCardTranslation === secondCardWord) ||
+                    (firstCardTranslation === secondCardWord && firstCardWord === secondCardTranslation)
+                ) {
+                    cardElement.classList.add('correct');
+                    firstClickedCard.classList.add('fade-out');
+                    cardElement.classList.add('fade-out');
+
+                    firstClickedCard = null;
+                    correctAnswersCount++;
+                } else {
+                    cardElement.classList.add('wrong');
+
+                    setTimeout(() => {
+                        cardElement.classList.remove('wrong');
+                        firstClickedCard.classList.remove('correct');
+                        firstClickedCard = null;
+                    }, 500);
+                }
+            }
         }
-    }
-}
-
-function checkPair() {
-    const firstTranslation = selectedCards[0].querySelector('.flip-card-inner').getAttribute('data-translation');
-    const secondTranslation = selectedCards[1].querySelector('.flip-card-inner').getAttribute('data-translation');
-
-    if (firstTranslation === secondTranslation) {
-        selectedCards.forEach(card => {
-            card.classList.add('fade-out');
-            setTimeout(() => {
-                card.remove();
+      
+        if (correctAnswersCount === words.length) {
+            clearInterval(timerInterval); 
+            setTimeout(() => { 
+                alert(`Поздравляю! Тестирование завершено! Время: ${timerElements.innerText}`); 
             }, 500);
-        });
-        correctCount++;
-        resetSelection();
-        checkCompletion();
-    } else {
-        selectedCards[1].classList.add('wrong');
-        setTimeout(() => {
-            selectedCards[1].classList.remove('wrong');
-            resetSelection();
-        }, 1000);
-    }
+        }
+    });
+     return cardElement;
 }
-
-function resetSelection() {
-    selectedCards = [];
-}
-
-function checkCompletion() {
-    const remainingCards = document.querySelectorAll('#exam-cards .flip-card');
-    if (remainingCards.length === 0) {
-        alert(`Тестирование завершено! Вы правильно ответили на ${correctCount} из ${words.length}.`);
-        initializeStudyMode();
-    } else {
-        const correctPercent = (correctCount / words.length * 100).toFixed(2);
-        document.querySelector('#correct-percent').innerText = `${correctPercent}%`;
-        document.querySelector('#exam-progress').value = correctCount;
-    }
-}
-
-function initializeStudyMode() {
-    examMode = false;
-    currentIndex = 0;
-    updateWord();
-    document.querySelector('#study-mode').classList.remove('hidden');
-    document.querySelector('#exam-mode').classList.add('hidden');
-}
- updateWord();

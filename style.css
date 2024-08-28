@@ -4,7 +4,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
   position: relative;
-  background: #936d785e;
+  background: #c1e2955e;
   font-family: "Roboto", sans-serif;
 }
 
@@ -15,7 +15,7 @@ body {
 
 .logo {
   font-family: "Pacifico", cursive;
-  color: rgb(36, 31, 31);
+  color: rgb(58, 73, 214);
   text-decoration: none;
   font-size: 36px;
 }
@@ -56,12 +56,12 @@ body {
 }
 
 .flip-card-front {
-  background-color: #ae607b;
+  background-color: #2588da;
   color: whitesmoke;
 }
 
 .flip-card-back {
-  background-color: #82db86;
+  background-color: #fcf066;
   color: black;
   transform: rotateX(180deg);
 }
@@ -88,6 +88,7 @@ main {
 
 .motivation {
   font-weight: bold;
+  color: rgba(0, 25, 251, 0.715);
 }
 
 .sidebar {
@@ -131,8 +132,8 @@ progress {
 
 .slider-controls button,
 #shuffle-words {
-  color: #3d454e;
-  background-color: #f8f9fa;
+  color: #1d3047;
+  background-color: #b5d3f1c5;
   border: 1px solid #d3d4dc;
   cursor: pointer;
   margin-top: 10px;
